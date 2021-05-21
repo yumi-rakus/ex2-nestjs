@@ -1,14 +1,24 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from './models/user.model';
 import { v4 as uuid } from 'uuid';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UsersEntity } from './users.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {
-  private users: User[] = [];
+  constructor(
+    @InjectRepository(UsersEntity)
+    private usersRepository: Repository<UsersEntity>,
+  ) {}
 
-  createUser(createUserDto: CreateUserDto) {
+  async createUser(createUserDto: CreateUserDto): Promise<string> {
     const userId = uuid();
     const newUser = new User(
       userId,
@@ -16,53 +26,61 @@ export class UsersService {
       createUserDto.gender,
       createUserDto.age,
     );
-    this.users.push(newUser);
+
+    try {
+      await this.usersRepository.save(newUser);
+    } catch (e) {
+      throw new InternalServerErrorException();
+    }
+
     return userId;
   }
 
-  readAllUsers() {
-    return [...this.users];
+  async readAllUsers(): Promise<UsersEntity[]> {
+    return this.usersRepository.find();
   }
 
-  readUser(userId: string) {
-    const [user, _index] = this.findUser(userId);
-    return { ...user };
+  async readUser(userId: string): Promise<UsersEntity> {
+    const found = await this.usersRepository.findOne(userId);
+
+    if (!found) {
+      throw new NotFoundException();
+    }
+
+    return found;
   }
 
-  updateUser(userId: string, updateUserDto: UpdateUserDto) {
-    const [user, index] = this.findUser(userId);
-    const updateUser = { ...user };
+  async updateUser(
+    userId: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UsersEntity> {
+    const found = await this.readUser(userId);
 
     // name
     if (updateUserDto.name) {
-      updateUser.name = updateUserDto.name;
+      found.name = updateUserDto.name;
     }
 
     // gender
     if (updateUserDto.gender) {
-      updateUser.gender = updateUserDto.gender;
+      found.gender = updateUserDto.gender;
     }
 
     // age
     if (updateUserDto.age) {
-      updateUser.age = updateUserDto.age;
+      found.age = updateUserDto.age;
     }
 
-    this.users[index] = { ...updateUser };
+    await this.usersRepository.save(found);
+
+    return found;
   }
 
-  deleteUser(userId: string) {
-    const [user, _index] = this.findUser(userId);
-    this.users = this.users.filter((u: User) => u.id !== user.id);
-  }
+  async deleteUser(userId: string): Promise<void> {
+    const result = await this.usersRepository.delete(userId);
 
-  private findUser(id: string): [User, number] {
-    const index = this.users.findIndex((u: User) => u.id === id);
-    const user = this.users[index];
-
-    if (!user) {
-      throw new NotFoundException(`Could not find the user of id: ${id}`);
+    if (result.affected === 0) {
+      throw new NotFoundException();
     }
-    return [user, index];
   }
 }

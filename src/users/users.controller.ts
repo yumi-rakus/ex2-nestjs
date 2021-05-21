@@ -14,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { createUserSchema } from './schemas/create-user.schema';
 import { JoiValidationPipe } from '../common/pipes/validation.pipe';
 import { updateUserSchema } from './schemas/update-user.schema';
+import { UsersEntity } from './users.entity';
 
 @Controller('users')
 export class UsersController {
@@ -21,8 +22,8 @@ export class UsersController {
 
   @Post()
   @UsePipes(new JoiValidationPipe(createUserSchema))
-  addUser(@Body() createUserDto: CreateUserDto) {
-    const userId = this.usersService.createUser(createUserDto);
+  async addUser(@Body() createUserDto: CreateUserDto): Promise<{ id: string }> {
+    const userId = await this.usersService.createUser(createUserDto);
 
     return {
       id: userId,
@@ -30,25 +31,27 @@ export class UsersController {
   }
 
   @Get()
-  getAllUsers() {
-    return this.usersService.readAllUsers();
+  async getAllUsers(): Promise<UsersEntity[]> {
+    return await this.usersService.readAllUsers();
   }
 
   @Get(':id')
-  getUser(@Param('id') id: string) {
-    return this.usersService.readUser(id);
+  async getUser(@Param('id') id: string): Promise<UsersEntity> {
+    return await this.usersService.readUser(id);
   }
 
   @Patch(':id')
-  @UsePipes(new JoiValidationPipe(updateUserSchema))
-  updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    this.usersService.updateUser(id, updateUserDto);
+  async updateUser(
+    @Param('id') id: string,
+    @Body(new JoiValidationPipe(updateUserSchema)) updateUserDto: UpdateUserDto,
+  ) {
+    await this.usersService.updateUser(id, updateUserDto);
     return null;
   }
 
   @Delete(':id')
-  removeUser(@Param('id') id: string) {
-    this.usersService.deleteUser(id);
+  async removeUser(@Param('id') id: string) {
+    await this.usersService.deleteUser(id);
     return null;
   }
 }

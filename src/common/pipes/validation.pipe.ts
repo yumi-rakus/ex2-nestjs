@@ -7,11 +7,11 @@ import {
 } from '@nestjs/common';
 
 @Injectable()
-export class ValidationPipe implements PipeTransform {
-  constructor(private readonly schema: any) {}
+export class JoiValidationPipe implements PipeTransform {
+  constructor(private readonly schema: Joi.ObjectSchema) {}
 
   transform(value: any, _metadata: ArgumentMetadata) {
-    const { error } = Joi.valid(value, this.schema);
+    const { error } = this.schema.validate(value);
     if (error) {
       throw new BadRequestException(error);
     }

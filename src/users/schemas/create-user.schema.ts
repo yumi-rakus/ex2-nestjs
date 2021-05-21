@@ -4,6 +4,6 @@ import { Gender } from './user.enum';
 
 export const createUserSchema = Joi.object().keys({
   name: Joi.string().min(3).required(),
-  gender: Joi.string().valid([Gender.Male, Gender.Female]).required(),
+  gender: Joi.string().valid(Gender.Male, Gender.Female).required(),
   age: Joi.number().integer().min(0).required(),
 });

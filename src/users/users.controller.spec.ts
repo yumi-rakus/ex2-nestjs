@@ -18,18 +18,18 @@ describe('UserController', () => {
   });
 
   describe('addUser', () => {
-    it('should return id of the new user', () => {
+    it('should return id of the new user', async () => {
       const newUser: CreateUserDto = {
         name: 'Tom',
         gender: Gender.Male,
         age: 22,
       };
-      expect(usersController.addUser(newUser)).toHaveProperty('id');
+      expect(await usersController.addUser(newUser)).toHaveProperty('id');
     });
   });
 
   describe('getAllUsers', () => {
-    it('should return all users', () => {
+    it('should return all users', async () => {
       const users: CreateUserDto[] = [
         {
           name: 'Tom',
@@ -48,18 +48,18 @@ describe('UserController', () => {
         },
       ];
 
-      usersController.addUser(users[0]);
-      usersController.addUser(users[1]);
-      usersController.addUser(users[2]);
+      await usersController.addUser(users[0]);
+      await usersController.addUser(users[1]);
+      await usersController.addUser(users[2]);
 
-      expect(usersController.getAllUsers()).toEqual(
+      expect(await usersController.getAllUsers()).toEqual(
         users.map((user) => ({ ...user, id: expect.anything() })),
       );
     });
   });
 
   describe('getUser', () => {
-    it('should return a user', () => {
+    it('should return a user', async () => {
       const users: CreateUserDto[] = [
         {
           name: 'Tom',
@@ -78,19 +78,23 @@ describe('UserController', () => {
         },
       ];
 
-      const userId0 = usersController.addUser(users[0]).id;
-      const userId1 = usersController.addUser(users[1]).id;
-      const userId2 = usersController.addUser(users[2]).id;
+      const user0 = await usersController.addUser(users[0]);
+      const user1 = await usersController.addUser(users[1]);
+      const user2 = await usersController.addUser(users[2]);
 
-      expect(usersController.getUser(userId0)).toEqual({
+      const userId0 = user0.id;
+      const userId1 = user1.id;
+      const userId2 = user2.id;
+
+      expect(await usersController.getUser(userId0)).toEqual({
         ...users[0],
         id: userId0,
       });
-      expect(usersController.getUser(userId1)).toEqual({
+      expect(await usersController.getUser(userId1)).toEqual({
         ...users[1],
         id: userId1,
       });
-      expect(usersController.getUser(userId2)).toEqual({
+      expect(await usersController.getUser(userId2)).toEqual({
         ...users[2],
         id: userId2,
       });
@@ -98,23 +102,24 @@ describe('UserController', () => {
   });
 
   describe('updateUser', () => {
-    it('should update the user', () => {
+    it('should update the user', async () => {
       const newUser: CreateUserDto = {
         name: 'Mary',
         gender: Gender.Female,
         age: 19,
       };
 
-      const addedUserId = usersController.addUser(newUser).id;
+      const addedUser = await usersController.addUser(newUser);
+      const addedUserId = addedUser.id;
       const updateUser: UpdateUserDto = {
         name: 'Super Man',
         gender: Gender.Male,
         age: 100,
       };
 
-      usersController.updateUser(addedUserId, updateUser);
+      await usersController.updateUser(addedUserId, updateUser);
 
-      expect(usersController.getUser(addedUserId)).toEqual({
+      expect(await usersController.getUser(addedUserId)).toEqual({
         ...updateUser,
         id: addedUserId,
       });
@@ -122,7 +127,7 @@ describe('UserController', () => {
   });
 
   describe('removeUser', () => {
-    it('should remove the user', () => {
+    it('should remove the user', async () => {
       const users: CreateUserDto[] = [
         {
           name: 'Keid',
@@ -136,13 +141,14 @@ describe('UserController', () => {
         },
       ];
 
-      usersController.addUser(users[0]);
-      const userId1 = usersController.addUser(users[1]).id;
+      await usersController.addUser(users[0]);
+      const user1 = await usersController.addUser(users[1]);
+      const userId1 = user1.id;
 
-      usersController.removeUser(userId1);
+      await usersController.removeUser(userId1);
 
-      expect(usersController.getAllUsers()).toHaveLength(1);
-      expect(() => usersController.getUser(userId1)).toThrow();
+      expect(await usersController.getAllUsers()).toHaveLength(1);
+      expect(async () => await usersController.getUser(userId1)).toThrow();
     });
   });
 });
